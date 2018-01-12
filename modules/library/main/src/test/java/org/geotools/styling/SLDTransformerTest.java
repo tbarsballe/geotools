@@ -1114,10 +1114,14 @@ public class SLDTransformerTest {
         intString.add(Locale.CANADA_FRENCH, "titre");
         rule.getDescription().setTitle(intString);
         String xml = transformer.transform(rule);
-        assertTrue(xml.contains("<sld:Title>title"));
+        assertTrue(xml.contains("<sld:Title>"));
+        assertTrue(xml.contains("title"));
         assertTrue(xml.contains("<sld:Localized lang=\""+Locale.ITALIAN.toString()+"\">titolo</sld:Localized>"));
         assertTrue(xml.contains("<sld:Localized lang=\""+Locale.FRENCH.toString()+"\">titre</sld:Localized>"));
         assertTrue(xml.contains("<sld:Localized lang=\""+Locale.CANADA_FRENCH.toString()+"\">titre</sld:Localized>"));
+
+        assertTrue(xml.indexOf("<sld:Title>") < xml.indexOf("title"));
+        assertTrue(xml.indexOf("</sld:Title>") > xml.indexOf("title"));
     }
     
     public void testLocalizedAbstract() throws Exception {
@@ -1365,7 +1369,7 @@ public class SLDTransformerTest {
         String xml = transformer.transform(sld);
         Document doc = buildTestDocument(xml);
         
-        assertXpathEvaluatesTo("abc", "//sld:Label/text()[1]", doc);
+        assertXpathEvaluatesTo("abc", "normalize-space(//sld:Label/text()[1])", doc);
         assertXpathEvaluatesTo("ogc:PropertyName", "name(//sld:Label/*[1])", doc);
         assertXpathEvaluatesTo("myProperty", "//sld:Label/*[1]/text()", doc);
     }
@@ -1378,10 +1382,16 @@ public class SLDTransformerTest {
         StyledLayerDescriptor sld = buildSLDAroundSymbolizer(ts);
         
         String xml = transformer.transform(sld);
-        
-        assertTrue(xml.contains("<sld:Label><![CDATA[ abc]]>" + NEWLINE + 
-                "                            <ogc:PropertyName>myProperty</ogc:PropertyName>" + NEWLINE
-                + "                        </sld:Label>"));
+
+        assertTrue(xml.contains("<sld:Label>"));
+        assertTrue(xml.contains("<![CDATA[ abc]]>"));
+        assertTrue(xml.contains("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.contains("</sld:Label>"));
+
+        assertTrue(xml.indexOf("<sld:Label>") < xml.indexOf("<![CDATA[ abc]]>"));
+        assertTrue(xml.indexOf("<![CDATA[ abc]]>") < xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>") < xml.indexOf("</sld:Label>"));
+
     }
     
     @Test
@@ -1392,9 +1402,15 @@ public class SLDTransformerTest {
         StyledLayerDescriptor sld = buildSLDAroundSymbolizer(ts);
         
         String xml = transformer.transform(sld);
-        assertTrue(xml.contains("<sld:Label><![CDATA[abc ]]>" + NEWLINE +  
-                "                            <ogc:PropertyName>myProperty</ogc:PropertyName>" + NEWLINE
-                + "                        </sld:Label>"));
+
+        assertTrue(xml.contains("<sld:Label>"));
+        assertTrue(xml.contains("<![CDATA[abc ]]>"));
+        assertTrue(xml.contains("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.contains("</sld:Label>"));
+
+        assertTrue(xml.indexOf("<sld:Label>") < xml.indexOf("<![CDATA[abc ]]>"));
+        assertTrue(xml.indexOf("<![CDATA[abc ]]>") < xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>") < xml.indexOf("</sld:Label>"));
     }
     
     @Test
@@ -1405,9 +1421,35 @@ public class SLDTransformerTest {
         StyledLayerDescriptor sld = buildSLDAroundSymbolizer(ts);
         
         String xml = transformer.transform(sld);
-        assertTrue(xml.contains("<sld:Label><![CDATA[a  bc]]>" + NEWLINE +
-                "                            <ogc:PropertyName>myProperty</ogc:PropertyName>" + NEWLINE
-                + "                        </sld:Label>"));
+
+        assertTrue(xml.contains("<sld:Label>"));
+        assertTrue(xml.contains("<![CDATA[a  bc]]>"));
+        assertTrue(xml.contains("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.contains("</sld:Label>"));
+
+        assertTrue(xml.indexOf("<sld:Label>") < xml.indexOf("<![CDATA[a  bc]]>"));
+        assertTrue(xml.indexOf("<![CDATA[a  bc]]>") < xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>") < xml.indexOf("</sld:Label>"));
+
+    }
+
+    @Test
+    public void testLabelCDataNewline() throws Exception {
+        StyleBuilder sb = new StyleBuilder();
+        TextSymbolizer ts = sb.createTextSymbolizer();
+        ts.setLabel(ff.function("strConcat", ff.literal("a \n bc"), ff.property("myProperty")));
+        StyledLayerDescriptor sld = buildSLDAroundSymbolizer(ts);
+
+        String xml = transformer.transform(sld);
+
+        assertTrue(xml.contains("<sld:Label>"));
+        assertTrue(xml.contains("<![CDATA[a \n bc]]>"));
+        assertTrue(xml.contains("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.contains("</sld:Label>"));
+
+        assertTrue(xml.indexOf("<sld:Label>") < xml.indexOf("<![CDATA[a \n bc]]>"));
+        assertTrue(xml.indexOf("<![CDATA[a \n bc]]>") < xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>") < xml.indexOf("</sld:Label>"));
 
     }
     
@@ -1421,8 +1463,16 @@ public class SLDTransformerTest {
         String xml = transformer.transform(sld);
         // System.out.println(xml);
         // Java own xpath processor does not seem to fully support normalize-space() so we resort to string comparisons here
-        assertTrue(xml.contains("<sld:Label><![CDATA[abc ]]>" + NEWLINE +  
-                "                            <ogc:PropertyName>myProperty</ogc:PropertyName><![CDATA[ def]]></sld:Label>"));
+        assertTrue(xml.contains("<sld:Label>"));
+        assertTrue(xml.contains("<![CDATA[abc ]]>"));
+        assertTrue(xml.contains("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.contains("<![CDATA[ def]]>"));
+        assertTrue(xml.contains("</sld:Label>"));
+
+        assertTrue(xml.indexOf("<sld:Label>") < xml.indexOf("<![CDATA[abc ]]>"));
+        assertTrue(xml.indexOf("<![CDATA[abc ]]>") < xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>"));
+        assertTrue(xml.indexOf("<ogc:PropertyName>myProperty</ogc:PropertyName>") < xml.indexOf("<![CDATA[ def]]>"));
+        assertTrue(xml.indexOf("<![CDATA[ def]]>") < xml.indexOf("</sld:Label>"));
     }
 
     /**
